@@ -1,4 +1,4 @@
-package example
+package greet
 
 import akka.actor._
 

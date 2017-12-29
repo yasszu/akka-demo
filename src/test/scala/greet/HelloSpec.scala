@@ -1,4 +1,4 @@
-package example
+package greet
 
 import org.scalatest._
 

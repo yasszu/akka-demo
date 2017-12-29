@@ -1,7 +1,7 @@
-package example
+package greet
 
 import akka.actor._
-import example.GreetingActor.Greeting
+import greet.GreetingActor.Greeting
 
 object Greet extends App {
   val system = ActorSystem("greeting-system")
