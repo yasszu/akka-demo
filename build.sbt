@@ -1,4 +1,4 @@
-name := "sbt-project"
+name := "akka-demo"
 
 version := "1.0"
 
