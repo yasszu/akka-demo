@@ -15,9 +15,9 @@ object Parallel extends App {
 
   implicit val timeout: Timeout = Timeout(60 seconds)
 
-  implicit val system = ActorSystem("my-system")
+  implicit val system: ActorSystem = ActorSystem("my-system")
 
-  implicit val materializer = ActorMaterializer()
+  implicit val materializer: ActorMaterializer = ActorMaterializer()
 
   lazy val futureA = (x: Int) => Future {
     println(">>>Start futureA")
