@@ -12,7 +12,7 @@ class GreetingActor extends Actor {
   }
 
   def greet(from: String): Unit = {
-    println(s"Hello, $from!")
+    println(s"Hello, $from!\n")
   }
 
 }
