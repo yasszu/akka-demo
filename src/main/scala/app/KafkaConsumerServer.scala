@@ -25,12 +25,13 @@ object KafkaConsumerServer extends App {
   val kafkaConfig = config.getConfig("akka.kafka.consumer")
   val bootstrapServers = config.getString("app.kafka.bootstrap.servers")
   val topic = config.getString("app.kafka.topic")
+  val group = config.getString("app.kafka.group")
   val committerSettings = CommitterSettings(system)
 
   val consumerSettings =
     ConsumerSettings(kafkaConfig, new StringDeserializer, new StringDeserializer)
       .withBootstrapServers(bootstrapServers)
-      .withGroupId("group1")
+      .withGroupId(group)
       .withProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
 
   val control =
