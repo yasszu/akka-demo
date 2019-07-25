@@ -24,7 +24,7 @@ test
 Send message
 ```
 $ cd /opt/kafka
-$ bin/kafka-console-producer.sh --broker-list localhost:9092 --topic test
+$ bin/kafka-console-producer.sh --broker-list localhost:9092 --topic Timeline
 > message1
 > message2
 ```
