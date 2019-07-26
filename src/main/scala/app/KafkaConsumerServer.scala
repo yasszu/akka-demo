@@ -37,7 +37,7 @@ object KafkaConsumerServer {
   val consumer: RunnableGraph[DrainingControl[Done]] =
     Consumer
       .committableSource(consumerSettings, Subscriptions.topics(topic))
-      .mapAsync(10) { msg =>
+      .mapAsync(1) { msg =>
         execute(msg.record.key, msg.record.value)
           .map(_ => msg.committableOffset)
       }
