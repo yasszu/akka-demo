@@ -1,23 +1,9 @@
 package app
 
-import scala.io.StdIn
+import com.twitter.server.TwitterServer
 
-object Main extends App {
+object Main extends TwitterServer with ConsumerModule {
 
-  val consumer = ConsumerImpl()
-  consumer.run()
-
-//  try {
-//    // Start a kafka consumer
-//    consumer.run()
-//
-//    println(">>> Input any words <<<")
-//    while (true) {
-//      val line = StdIn.readLine()
-//      println(s"Hello, $line!\n")
-//    }
-//  } catch {
-//    case e: Throwable => e.printStackTrace()
-//  }
+  run()
 
 }

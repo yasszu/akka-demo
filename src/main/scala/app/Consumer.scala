@@ -2,20 +2,29 @@ package app
 
 import java.util.Properties
 
-import org.apache.kafka.clients.consumer.KafkaConsumer
+import com.twitter.app.App
+import org.apache.kafka.clients.consumer.{ConsumerRecord, KafkaConsumer}
 import org.apache.kafka.common.errors.WakeupException
+import org.apache.kafka.common.serialization.StringDeserializer
 
 import scala.collection.JavaConverters._
 
-trait Consumer {
+trait Consumer[T, U] {
+
+  val timeout: Long = 100
+
+  val topic: String
+
+  val consumer: KafkaConsumer[T, U]
 
   final def run(): Unit = {
+    onStart()
+    sys.addShutdownHook {
+      onWakeup()
+    }
     try {
       while (true) {
-        sys.addShutdownHook {
-          onWakeup()
-        }
-        onStart()
+        onSubscribe(consumer.poll(100).iterator.asScala)
       }
     } catch {
       case e: WakeupException => println("Stopping consumer...")
@@ -26,15 +35,29 @@ trait Consumer {
 
   }
 
-  protected def onStart(): Unit
+  protected def onStart(): Unit = {
+    import java.util
+    consumer.subscribe(util.Arrays.asList(topic))
+  }
 
-  protected def onWakeup(): Unit
+  protected def onWakeup(): Unit = {
+    println("Wakeup a consumer")
+    consumer.wakeup()
+  }
 
-  protected def onClose(): Unit
+  protected def onClose(): Unit = {
+    println("Close a consumer")
+    consumer.close()
+  }
+
+  def onSubscribe(records: Iterator[ConsumerRecord[T, U]]): Unit
 
 }
 
-case class ConsumerImpl() extends Consumer {
+trait ConsumerModule extends Consumer[String, String] {
+  self: App =>
+
+  override val topic: String = "timelines"
 
   val props: Properties = {
     val p = new Properties()
@@ -44,10 +67,9 @@ case class ConsumerImpl() extends Consumer {
     p
   }
 
-  def consumer = new KafkaConsumer[String, String](props)
+  val consumer = new KafkaConsumer[String, String](props, new StringDeserializer, new StringDeserializer)
 
-  override protected def onStart(): Unit = {
-    val records = consumer.poll(100).iterator.asScala
+  override def onSubscribe(records: Iterator[ConsumerRecord[String, String]]): Unit = {
     records.foreach { r =>
       val key = r.key()
       val value = r.value()
@@ -55,16 +77,4 @@ case class ConsumerImpl() extends Consumer {
     }
   }
 
-  override protected def onWakeup(): Unit = {
-    println("Wakeup a consumer")
-    consumer.wakeup()
-  }
-
-  override protected def onClose(): Unit = {
-    println("Close a consumer")
-    consumer.close()
-  }
-
 }
-
-
