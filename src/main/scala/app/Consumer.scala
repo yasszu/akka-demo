@@ -9,13 +9,13 @@ import org.apache.kafka.common.serialization.StringDeserializer
 
 import scala.collection.JavaConverters._
 
-trait Consumer[T, U] {
+trait Consumer[K, V] {
 
   val timeout: Long = 100
 
   val topic: String
 
-  val consumer: KafkaConsumer[T, U]
+  val consumer: KafkaConsumer[K, V]
 
   final def run(): Unit = {
     onStart()
@@ -50,7 +50,7 @@ trait Consumer[T, U] {
     consumer.close()
   }
 
-  def onSubscribe(records: Iterator[ConsumerRecord[T, U]]): Unit
+  def onSubscribe(records: Iterator[ConsumerRecord[K, V]]): Unit
 
 }
 
