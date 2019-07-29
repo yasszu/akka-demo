@@ -1,15 +1,21 @@
 package app
 
-import java.util
 import java.util.Properties
 
-import org.apache.kafka.clients.consumer.KafkaConsumer
+import com.twitter.app.App
+import org.apache.kafka.clients.consumer.{ConsumerRecord, KafkaConsumer}
 import org.apache.kafka.common.errors.WakeupException
 import org.apache.kafka.common.serialization.StringDeserializer
 
 import scala.collection.JavaConverters._
 
-trait Consumer {
+trait Consumer[K, V] {
+
+  val timeout: Long = 100
+
+  val topic: String
+
+  val consumer: KafkaConsumer[K, V]
 
   final def run(): Unit = {
     onStart()
@@ -18,10 +24,10 @@ trait Consumer {
     }
     try {
       while (true) {
-        onSubscribe()
+        onSubscribe(consumer.poll(100).iterator.asScala)
       }
     } catch {
-      case _: WakeupException => println("Stopping consumer...")
+      case e: WakeupException => println("Stopping consumer...")
     }
     finally {
       onClose()
@@ -29,63 +35,46 @@ trait Consumer {
 
   }
 
-  protected def onStart(): Unit
+  protected def onStart(): Unit = {
+    import java.util
+    consumer.subscribe(util.Arrays.asList(topic))
+  }
 
-  protected def onSubscribe(): Unit
+  protected def onWakeup(): Unit = {
+    println("Wakeup a consumer")
+    consumer.wakeup()
+  }
 
-  protected def onWakeup(): Unit
+  protected def onClose(): Unit = {
+    println("Close a consumer")
+    consumer.close()
+  }
 
-  protected def onClose(): Unit
+  def onSubscribe(records: Iterator[ConsumerRecord[K, V]]): Unit
 
 }
 
-case class ConsumerImpl() extends Consumer {
+trait ConsumerModule extends Consumer[String, String] {
+  self: App =>
+
+  override val topic: String = "timelines"
 
   val props: Properties = {
     val p = new Properties()
-    p.setProperty("bootstrap.servers", "PLAINTEXT_HOST://localhost:9092")
-    p.setProperty("group.id", "test")
-    p.setProperty("enable.auto.commit", "true")
-    p.setProperty("auto.commit.interval.ms", "1000")
-    p.setProperty("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer")
-    p.setProperty("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer")
+    p.put("bootstrap.servers", "localhost:9092")
+    p.put("group.id", "test")
+    p.put("enable.auto.commit", "true")
     p
   }
 
   val consumer = new KafkaConsumer[String, String](props, new StringDeserializer, new StringDeserializer)
 
-  val topic: util.Collection[String] = Seq("timeline").asJavaCollection
-
-
-  override protected def onStart(): Unit = {
-    println("Start a consumer")
-    consumer.subscribe(topic)
-  }
-
-  override protected def onSubscribe(): Unit = {
-//        consumer.poll(100L).iterator.asScala.foreach { record =>
-//          val key = record.key()
-//          val value = record.value()
-//          println(s"key:$key, value:$value")
-//        }
-    val records = consumer.poll(100)
-    for (record <- records.iterator.asScala) {
-      val key = record.key()
-      val value = record.value()
+  override def onSubscribe(records: Iterator[ConsumerRecord[String, String]]): Unit = {
+    records.foreach { r =>
+      val key = r.key()
+      val value = r.value()
       println(s"key:$key, value:$value")
     }
   }
 
-  override protected def onWakeup(): Unit = {
-    println("\nWakeup a consumer")
-    consumer.wakeup()
-  }
-
-  override protected def onClose(): Unit = {
-    println("Close a consumer")
-    consumer.close()
-  }
-
 }
-
-
