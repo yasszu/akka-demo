@@ -24,7 +24,7 @@ trait Consumer[K, V] {
     }
     try {
       while (true) {
-        onSubscribe(consumer.poll(100).iterator.asScala)
+        onSubscribe(consumer.poll(timeout).iterator.asScala)
       }
     } catch {
       case e: WakeupException => println("Stopping consumer...")
@@ -37,11 +37,12 @@ trait Consumer[K, V] {
 
   protected def onStart(): Unit = {
     import java.util
+    println("Start a consumer")
     consumer.subscribe(util.Arrays.asList(topic))
   }
 
   protected def onWakeup(): Unit = {
-    println("Wakeup a consumer")
+    println("\nWakeup a consumer")
     consumer.wakeup()
   }
 
@@ -57,7 +58,7 @@ trait Consumer[K, V] {
 trait ConsumerModule extends Consumer[String, String] {
   self: App =>
 
-  override val topic: String = "timelines"
+  override val topic: String = "post"
 
   val props: Properties = {
     val p = new Properties()
