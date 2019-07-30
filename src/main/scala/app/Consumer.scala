@@ -1,11 +1,7 @@
 package app
 
-import java.util.Properties
-
-import com.twitter.app.App
 import org.apache.kafka.clients.consumer.{ConsumerRecord, KafkaConsumer}
 import org.apache.kafka.common.errors.WakeupException
-import org.apache.kafka.common.serialization.StringDeserializer
 
 import scala.collection.JavaConverters._
 
@@ -17,7 +13,7 @@ trait Consumer[K, V] {
 
   val consumer: KafkaConsumer[K, V]
 
-  final def run(): Unit = {
+  final def run()(): Unit = {
     onStart()
     sys.addShutdownHook {
       onWakeup()
@@ -52,35 +48,5 @@ trait Consumer[K, V] {
   }
 
   def onSubscribe(records: Iterator[ConsumerRecord[K, V]]): Unit
-
-}
-
-trait ConsumerModule extends Consumer[String, String] {
-  self: App =>
-
-  override val topic: String = "post"
-
-  val props: Properties = {
-    val p = new Properties()
-    p.setProperty("bootstrap.servers", "localhost:9092")
-    p.setProperty("group.id", "test")
-    p.setProperty("enable.auto.commit", "true")
-    p.setProperty("auto.commit.interval.ms", "1000")
-    p
-  }
-
-  val consumer =
-    new KafkaConsumer[String, String](
-      props,
-      new StringDeserializer,
-      new StringDeserializer)
-
-  override def onSubscribe(records: Iterator[ConsumerRecord[String, String]]): Unit = {
-    records.foreach { r =>
-      val key = r.key()
-      val value = r.value()
-      println(s"key:$key, value:$value")
-    }
-  }
 
 }
