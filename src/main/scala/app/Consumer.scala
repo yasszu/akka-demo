@@ -1,9 +1,12 @@
 package app
 
+import akka.Done
+import com.twitter.util.Future
 import org.apache.kafka.clients.consumer.{ConsumerRecord, KafkaConsumer}
 import org.apache.kafka.common.errors.WakeupException
 
 import scala.collection.JavaConverters._
+import scala.concurrent.ExecutionContext
 
 trait Consumer[K, V] {
 
@@ -13,7 +16,7 @@ trait Consumer[K, V] {
 
   val consumer: KafkaConsumer[K, V]
 
-  final def run()(): Unit = {
+  final def run()(implicit ec: ExecutionContext): Future[Done] = Future {
     onStart()
     sys.addShutdownHook {
       onWakeup()
@@ -28,7 +31,7 @@ trait Consumer[K, V] {
     finally {
       onClose()
     }
-
+    Done
   }
 
   protected def onStart(): Unit = {
