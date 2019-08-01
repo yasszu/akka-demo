@@ -1,12 +1,11 @@
 package app
 
 import akka.actor.ActorSystem
-import com.twitter.server.TwitterServer
-import com.twitter.util.Await
 
 import scala.concurrent.ExecutionContext
+import scala.io.StdIn
 
-object ConsumerServer extends TwitterServer {
+object ConsumerServer extends App {
 
   val system = ActorSystem("kafka-consumer")
 
@@ -14,8 +13,8 @@ object ConsumerServer extends TwitterServer {
 
   val postConsumer = PostConsumer()
 
-  def main(): Unit = {
-    Await.ready(postConsumer.run())
-  }
+  postConsumer.run()
+
+  StdIn.readLine()
 
 }

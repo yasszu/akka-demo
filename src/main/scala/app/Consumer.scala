@@ -1,12 +1,11 @@
 package app
 
 import akka.Done
-import com.twitter.util.Future
 import org.apache.kafka.clients.consumer.{ConsumerRecord, KafkaConsumer}
 import org.apache.kafka.common.errors.WakeupException
 
 import scala.collection.JavaConverters._
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 trait Consumer[K, V] {
 
