@@ -11,9 +11,11 @@ object Main extends App {
   implicit val ec: ExecutionContext = system.dispatcher
 
   val postConsumerServer = PostConsumerServer()
+
   val postProducerServer = PostProducerServer()
 
   postConsumerServer.run()
+
   postProducerServer.run()
 
 }
