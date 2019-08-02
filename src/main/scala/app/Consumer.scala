@@ -1,54 +1,41 @@
 package app
 
-import akka.Done
-import org.apache.kafka.clients.consumer.{ConsumerRecord, KafkaConsumer}
-import org.apache.kafka.common.errors.WakeupException
+import java.util.Properties
+
+import org.apache.kafka.clients.consumer.KafkaConsumer
 
 import scala.collection.JavaConverters._
-import scala.concurrent.{ExecutionContext, Future}
 
 trait Consumer[K, V] {
 
-  val timeout: Long = 100
+  def subscribe(topic: String): Unit
 
-  val topic: String
+  def poll(timeout: Long): Iterator[(K, V)]
 
-  val consumer: KafkaConsumer[K, V]
+  def wakeup(): Unit
 
-  final def run()(implicit ec: ExecutionContext): Future[Done] = Future {
-    onStart()
-    sys.addShutdownHook {
-      onWakeup()
+  def close(): Unit
+
+}
+
+object Consumer {
+  def apply[K, V](props: Properties): Consumer[K, V] = new KafkaConsumerImpl[K, V](props)
+}
+
+class KafkaConsumerImpl[K, V](props: Properties) extends Consumer[K, V] {
+
+  val consumer = new KafkaConsumer[K, V](props)
+
+  override def subscribe(topic: String): Unit = consumer.subscribe(List(topic).asJava)
+
+  override def poll(timeout: Long): Iterator[(K, V)] = {
+    consumer.poll(timeout).iterator().asScala.map { record =>
+      (record.key(), record.value())
     }
-    try {
-      while (true) {
-        onSubscribe(consumer.poll(timeout).iterator.asScala)
-      }
-    } catch {
-      case e: WakeupException => println("Stopping consumer...")
-    }
-    finally {
-      onClose()
-    }
-    Done
   }
 
-  protected def onStart(): Unit = {
-    import java.util
-    println("Start a consumer")
-    consumer.subscribe(util.Arrays.asList(topic))
-  }
+  override def wakeup(): Unit = consumer.wakeup()
 
-  protected def onWakeup(): Unit = {
-    println("\nWakeup a consumer")
-    consumer.wakeup()
-  }
-
-  protected def onClose(): Unit = {
-    println("Close a consumer")
-    consumer.close()
-  }
-
-  def onSubscribe(records: Iterator[ConsumerRecord[K, V]]): Unit
+  override def close(): Unit = consumer.close()
 
 }
