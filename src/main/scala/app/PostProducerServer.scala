@@ -3,10 +3,12 @@ package app
 import java.util.Properties
 
 import akka.actor.{ActorSystem, Cancellable}
+import example.avro.messages.Post
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
 
 import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.duration._
+import io.confluent.kafka.serializers.KafkaAvroSerializer
 
 class PostProducerServer {
 
@@ -20,11 +22,12 @@ class PostProducerServer {
     p.setProperty("bootstrap.servers", "localhost:9092")
     p.setProperty("acks", "all")
     p.setProperty("key.serializer", "org.apache.kafka.common.serialization.StringSerializer")
-    p.setProperty("value.serializer", "org.apache.kafka.common.serialization.StringSerializer")
+    p.setProperty("schema.registry.url", "http://0.0.0.0:8081")
+    p.setProperty("value.serializer", classOf[KafkaAvroSerializer].getCanonicalName)
     p
   }
 
-  val producer = new KafkaProducer[String, String](props)
+  val producer = new KafkaProducer[String, Post](props)
 
   def run(): Cancellable = {
     println("Start producer")
@@ -35,14 +38,17 @@ class PostProducerServer {
 
   def sendRecords(): Unit = {
     (1 to 5).map { v =>
-      val key = System.currentTimeMillis().toString
-      val record = createRecord(key, v.toString)
+      val timestamp = System.currentTimeMillis()
+      val post = new Post()
+      post.setId(v)
+      post.setTimestamp(timestamp)
+      val record = createRecord("none", post)
       producer.send(record)
     }
   }
 
-  def createRecord(key: String, value: String): ProducerRecord[String, String] = {
-    new ProducerRecord[String, String](topic, key, value)
+  def createRecord(key: String, value: Post): ProducerRecord[String, Post] = {
+    new ProducerRecord[String, Post](topic, key, value)
   }
 
 }

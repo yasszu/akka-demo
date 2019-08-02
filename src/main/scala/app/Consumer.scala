@@ -26,7 +26,10 @@ class KafkaConsumerImpl[K, V](props: Properties) extends Consumer[K, V] {
 
   val consumer = new KafkaConsumer[K, V](props)
 
-  override def subscribe(topic: String): Unit = consumer.subscribe(List(topic).asJava)
+  override def subscribe(topic: String): Unit = {
+    import java.util
+    consumer.subscribe(util.Arrays.asList(topic))
+  }
 
   override def poll(timeout: Long): Iterator[(K, V)] = {
     consumer.poll(timeout).iterator().asScala.map { record =>

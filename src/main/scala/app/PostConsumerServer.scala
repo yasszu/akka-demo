@@ -2,7 +2,10 @@ package app
 
 import java.util.Properties
 
-class PostConsumerServer() extends ConsumerServer[String, String] {
+import example.avro.messages.Post
+import io.confluent.kafka.serializers.{KafkaAvroDeserializer, KafkaAvroDeserializerConfig}
+
+class PostConsumerServer() extends ConsumerServer[String, Post] {
 
   override val topic: String = "post"
 
@@ -12,16 +15,18 @@ class PostConsumerServer() extends ConsumerServer[String, String] {
     p.setProperty("group.id", "test")
     p.setProperty("enable.auto.commit", "true")
     p.setProperty("auto.commit.interval.ms", "1000")
+    p.setProperty("schema.registry.url", "http://0.0.0.0:8081")
+    p.setProperty(KafkaAvroDeserializerConfig.SPECIFIC_AVRO_READER_CONFIG, "true")
     p.setProperty("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer")
-    p.setProperty("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer")
+    p.setProperty("value.deserializer", classOf[KafkaAvroDeserializer].getCanonicalName)
     p
   }
 
-  override val consumer: Consumer[String, String] = Consumer[String, String](props)
+  override val consumer: Consumer[String, Post] = Consumer[String, Post](props)
 
-  override def onSubscribe(records: Iterator[(String, String)]): Unit = {
-    records.foreach { case (key, value) =>
-      println(s"key:$key, value:$value")
+  override def onSubscribe(records: Iterator[(String, Post)]): Unit = {
+    records.foreach { case (key: String, post: Post) =>
+      println(s"key:$key, value: {id:${post.getId}, timestamp: ${post.getTimestamp}}")
     }
   }
 

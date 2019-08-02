@@ -23,7 +23,8 @@ trait ConsumerServer[K, V] {
         onSubscribe(consumer.poll(timeout))
       }
     } catch {
-      case e: WakeupException => println("Stopping consumer...")
+      case _: WakeupException => println("Stopping consumer...")
+      case e => e.printStackTrace()
     }
     finally {
       onClose()
