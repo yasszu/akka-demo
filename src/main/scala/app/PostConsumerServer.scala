@@ -22,7 +22,7 @@ class PostConsumerServer() extends ConsumerServer[String, Post] {
     p
   }
 
-  override val consumer: Consumer[String, Post] = ConsumerImpl[String, Post](props)
+  override val consumer: Consumer[String, Post] = KafkaConsumer[String, Post](props)
 
   override def onSubscribe(records: Iterator[(String, Post)]): Unit = {
     records.foreach { case (key: String, post: Post) =>
