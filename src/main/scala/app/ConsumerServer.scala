@@ -2,10 +2,14 @@ package app
 
 import akka.Done
 import org.apache.kafka.common.errors.WakeupException
+import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.{ExecutionContext, Future}
 
 trait ConsumerServer[K, V] {
+  self =>
+
+  val logger: Logger = LoggerFactory.getLogger(self.getClass)
 
   val timeout: Long = 100
 
@@ -23,8 +27,8 @@ trait ConsumerServer[K, V] {
         onSubscribe(consumer.poll(timeout))
       }
     } catch {
-      case _: WakeupException => println("Stopping consumer...")
-      case e => e.printStackTrace()
+      case _: WakeupException => logger.info("Stopping consumer...")
+      case e: Throwable => e.printStackTrace()
     }
     finally {
       onClose()
@@ -33,17 +37,17 @@ trait ConsumerServer[K, V] {
   }
 
   protected def onStart(): Unit = {
-    println("Start a consumer")
+    logger.info("Start a consumer")
     consumer.subscribe(topic)
   }
 
   protected def onWakeup(): Unit = {
-    println("\nWakeup a consumer")
+    logger.info("Wakeup a consumer")
     consumer.wakeup()
   }
 
   protected def onClose(): Unit = {
-    println("Close a consumer")
+    logger.info("Close a consumer")
     consumer.close()
   }
 

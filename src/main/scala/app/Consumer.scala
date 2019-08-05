@@ -11,3 +11,4 @@ trait Consumer[K, V] {
   def close(): Unit
 
 }
+
