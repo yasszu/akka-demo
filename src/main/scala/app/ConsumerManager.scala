@@ -21,10 +21,6 @@ class ConsumerManager()(implicit ec: ExecutionContext) {
     consumers.keys.foreach(run)
   }
 
-  def shutdown(): Unit = {
-    consumers.values.foreach(_.onStop())
-  }
-
   def run(pid: Int): Unit = {
     consumers(pid).run() onComplete {
       case Success(done) =>
@@ -34,6 +30,10 @@ class ConsumerManager()(implicit ec: ExecutionContext) {
         logger.error("Restart")
         run(pid)
     }
+  }
+
+  def shutdown(): Unit = {
+    consumers.values.foreach(_.onStop())
   }
 
 }

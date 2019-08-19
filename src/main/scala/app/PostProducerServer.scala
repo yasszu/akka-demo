@@ -4,12 +4,12 @@ import java.util.Properties
 
 import akka.actor.{ActorSystem, Cancellable}
 import example.avro.messages.Post
-import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
-
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
-import scala.concurrent.duration._
 import io.confluent.kafka.serializers.KafkaAvroSerializer
+import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
 import org.slf4j.{Logger, LoggerFactory}
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.duration._
 
 class PostProducerServer { self =>
 

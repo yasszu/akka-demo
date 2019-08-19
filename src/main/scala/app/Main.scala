@@ -28,6 +28,7 @@ object Main extends App {
   sys.addShutdownHook {
     logger.info("Stopping consumer...")
     consumerManger.shutdown()
+    system.terminate()
   }
 
 }

@@ -8,6 +8,18 @@ import scala.concurrent.duration.{FiniteDuration, _}
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 
+trait ConsumerServer {
+
+  def run()(implicit ec: ExecutionContext): Future[Done]
+
+  def onStart(): Unit
+
+  def onStop(): Unit
+
+  def onClose(): Unit
+
+}
+
 trait ConsumerServerImpl[K, V] extends ConsumerServer {
   self =>
 
@@ -70,18 +82,6 @@ trait ConsumerServerImpl[K, V] extends ConsumerServer {
   }
 
   def subscribe(records: Iterator[(K, V)]): Unit
-
-}
-
-trait ConsumerServer {
-
-  def run()(implicit ec: ExecutionContext): Future[Done]
-
-  def onStart(): Unit
-
-  def onStop(): Unit
-
-  def onClose(): Unit
 
 }
 
