@@ -8,7 +8,7 @@ import scala.concurrent.duration.{FiniteDuration, _}
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 
-trait ConsumerServer[K, V] {
+trait ConsumerServerImpl[K, V] extends ConsumerServer {
   self =>
 
   val logger: Logger = LoggerFactory.getLogger(self.getClass)
@@ -23,29 +23,22 @@ trait ConsumerServer[K, V] {
     // Setup the consumer
     onStart()
 
-    // Stop the consumer when the VM exits
-    sys.addShutdownHook {
-      logger.info("Stopping consumer...")
-      onWakeup()
-    }
-
-    val promise = Promise[Done]()
-
     // Start subscribing messages
+    val promise = Promise[Done]()
     Future {
-      Try {
+      val done = Try {
         while (true) {
-          onSubscribe(consumer.poll(timeout.toMillis))
+          subscribe(consumer.poll(timeout.toMillis))
         }
         Done
-        // throw new IllegalStateException("Test")
       } recoverWith {
         case _: WakeupException => Success(Done)
         case e =>
           logger.error("Non fatal error occurred")
           e.printStackTrace()
           handleNonFatalError(e)
-      } match {
+      }
+      done match {
         case Success(done) =>
           onClose()
           promise success done
@@ -54,7 +47,6 @@ trait ConsumerServer[K, V] {
           promise failure e
       }
     }
-
     promise.future
   }
 
@@ -62,22 +54,34 @@ trait ConsumerServer[K, V] {
     Failure(error)
   }
 
-  protected def onStart(): Unit = {
+  def onStart(): Unit = {
     logger.info("Start a consumer")
     consumer.subscribe(topic)
   }
 
-  protected def onWakeup(): Unit = {
-    logger.info("Wakeup a consumer")
+  def onStop(): Unit = {
+    logger.info("Stop a consumer")
     consumer.wakeup()
   }
 
-  protected def onClose(): Unit = {
+  def onClose(): Unit = {
     logger.info("Close a consumer")
     consumer.close()
   }
 
-  def onSubscribe(records: Iterator[(K, V)]): Unit
+  def subscribe(records: Iterator[(K, V)]): Unit
+
+}
+
+trait ConsumerServer {
+
+  def run()(implicit ec: ExecutionContext): Future[Done]
+
+  def onStart(): Unit
+
+  def onStop(): Unit
+
+  def onClose(): Unit
 
 }
 

@@ -5,7 +5,7 @@ import java.util.Properties
 import example.avro.messages.Post
 import io.confluent.kafka.serializers.{KafkaAvroDeserializer, KafkaAvroDeserializerConfig}
 
-class PostConsumerServer() extends ConsumerServer[String, Post] {
+class PostConsumerServer() extends ConsumerServerImpl[String, Post] {
 
   override val topic: String = "post"
 
@@ -24,7 +24,7 @@ class PostConsumerServer() extends ConsumerServer[String, Post] {
 
   override val consumer: Consumer[String, Post] = ConsumerImpl[String, Post](props)
 
-  override def onSubscribe(records: Iterator[(String, Post)]): Unit = {
+  override def subscribe(records: Iterator[(String, Post)]): Unit = {
     records.foreach { case (key: String, post: Post) =>
       println(s"key:$key, value: {id:${post.getId}, timestamp: ${post.getTimestamp}}")
     }
