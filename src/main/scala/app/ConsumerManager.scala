@@ -5,39 +5,57 @@ import org.slf4j.{Logger, LoggerFactory}
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success}
 
-class ConsumerManager()(implicit ec: ExecutionContext) {
+class ConsumerManager {
   self =>
 
   val logger: Logger = LoggerFactory.getLogger(self.getClass)
 
-  private var consumers: Map[Int, ConsumerServer] = Map.empty
+  private var servers: Map[Int, ConsumerApplication] = Map.empty
 
-  def addConsumer(consumer: ConsumerServer): Unit = {
-    val pid = consumers.size + 1
-    consumers ++= Map(pid -> consumer)
+  private var factories: Map[Int, ConsumerServerFactory] = Map.empty
+
+  def addFactory(factory: ConsumerServerFactory): Unit = {
+    val pid = factories.size + 1
+    factories += (pid -> factory)
   }
 
-  def runAll(): Unit = {
-    consumers.keys.foreach(run)
+  def runAll()(implicit ec: ExecutionContext): Unit = {
+    initServers()
+    servers.keys.foreach(run)
   }
 
-  def run(pid: Int): Unit = {
-    consumers(pid).run() onComplete {
-      case Success(done) =>
+  private def initServers(): Unit = {
+    factories.foreach { case (pid, factory) =>
+      val server = factory.generate()
+      servers += (pid -> server)
+    }
+  }
+
+  private def run(pid: Int)(implicit ec: ExecutionContext): Unit = {
+    servers(pid).run() onComplete {
+      case Success(_) =>
         logger.info("Stopped successfully")
       case Failure(_) =>
-        logger.error("Unexpected error occurred")
-        logger.error("Restart")
+        logger.error("Non fatal error occurred")
+        logger.error("Restart consumer")
+        resetServer(pid)
         run(pid)
     }
   }
 
+  private def resetServer(pid: Int): Unit = {
+    servers -= pid
+    val server = factories(pid).generate()
+    servers += (pid -> server)
+  }
+
   def shutdown(): Unit = {
-    consumers.values.foreach(_.onStop())
+    logger.info("Shutdown consumers")
+    servers.values.foreach(_.onStop())
   }
 
 }
 
 object ConsumerManager {
-  def apply()(implicit ec: ExecutionContext): ConsumerManager = new ConsumerManager()(ec)
+  def apply(): ConsumerManager = new ConsumerManager()
 }

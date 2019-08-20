@@ -6,11 +6,10 @@ import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.duration.{FiniteDuration, _}
 import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.language.postfixOps
 import scala.util.{Failure, Success, Try}
 
-trait ConsumerServer {
-
-  def run()(implicit ec: ExecutionContext): Future[Done]
+trait ConsumerApplication extends FutureRunnable {
 
   def onStart(): Unit
 
@@ -20,7 +19,13 @@ trait ConsumerServer {
 
 }
 
-trait ConsumerServerImpl[K, V] extends ConsumerServer {
+trait FutureRunnable {
+
+  def run()(implicit ec: ExecutionContext): Future[Done]
+
+}
+
+trait ConsumerServer[K, V] extends ConsumerApplication {
   self =>
 
   val logger: Logger = LoggerFactory.getLogger(self.getClass)
@@ -31,7 +36,7 @@ trait ConsumerServerImpl[K, V] extends ConsumerServer {
 
   val consumer: Consumer[K, V]
 
-  final def run()(implicit ec: ExecutionContext): Future[Done] = {
+  override def run()(implicit ec: ExecutionContext): Future[Done] = {
     // Setup the consumer
     onStart()
 
@@ -41,6 +46,7 @@ trait ConsumerServerImpl[K, V] extends ConsumerServer {
       val done = Try {
         while (true) {
           subscribe(consumer.poll(timeout.toMillis))
+          // throw new IllegalStateException("test")
         }
         Done
       } recoverWith {
@@ -66,17 +72,17 @@ trait ConsumerServerImpl[K, V] extends ConsumerServer {
     Failure(error)
   }
 
-  def onStart(): Unit = {
+  override def onStart(): Unit = {
     logger.info("Start a consumer")
     consumer.subscribe(topic)
   }
 
-  def onStop(): Unit = {
+  override def onStop(): Unit = {
     logger.info("Stop a consumer")
     consumer.wakeup()
   }
 
-  def onClose(): Unit = {
+  override def onClose(): Unit = {
     logger.info("Close a consumer")
     consumer.close()
   }
@@ -85,3 +91,8 @@ trait ConsumerServerImpl[K, V] extends ConsumerServer {
 
 }
 
+trait ConsumerServerFactory {
+
+  def generate(): ConsumerApplication
+
+}

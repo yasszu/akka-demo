@@ -5,7 +5,7 @@ import java.util.Properties
 import example.avro.messages.Post
 import io.confluent.kafka.serializers.{KafkaAvroDeserializer, KafkaAvroDeserializerConfig}
 
-class PostConsumerServer() extends ConsumerServerImpl[String, Post] {
+class PostConsumerServer() extends ConsumerServer[String, Post] {
 
   override val topic: String = "post"
 
@@ -32,6 +32,8 @@ class PostConsumerServer() extends ConsumerServerImpl[String, Post] {
 
 }
 
-object PostConsumerServer {
-  def apply(): PostConsumerServer = new PostConsumerServer()
+object PostConsumerServerFactory extends ConsumerServerFactory {
+
+  override def generate(): ConsumerApplication = new PostConsumerServer()
+
 }

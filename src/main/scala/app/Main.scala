@@ -13,15 +13,14 @@ object Main extends App {
   implicit val system: ActorSystem = ActorSystem("kafka")
   implicit val ec: ExecutionContext = system.dispatcher
 
-  val postConsumerServer = PostConsumerServer()
   val postProducerServer = PostProducerServer()
+  val consumerManger = ConsumerManager()
 
   // Start a producer
   postProducerServer.run()
 
   // Start a consumer
-  val consumerManger = ConsumerManager()
-  consumerManger.addConsumer(postConsumerServer)
+  consumerManger.addFactory(PostConsumerServerFactory)
   consumerManger.runAll()
 
   // Stop the consumer when the VM exits
