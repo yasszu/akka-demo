@@ -4,19 +4,16 @@ import java.util.Properties
 
 import akka.actor.{ActorSystem, Cancellable}
 import example.avro.messages.Post
-import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
-
-import scala.concurrent.ExecutionContextExecutor
-import scala.concurrent.duration._
 import io.confluent.kafka.serializers.KafkaAvroSerializer
+import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
 import org.slf4j.{Logger, LoggerFactory}
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.duration._
 
 class PostProducerServer { self =>
 
   val logger: Logger = LoggerFactory.getLogger(self.getClass)
-
-  implicit val system: ActorSystem = ActorSystem("kafka-producer")
-  implicit val executionContext: ExecutionContextExecutor = system.dispatcher
 
   val topic: String = "post"
 
@@ -32,15 +29,16 @@ class PostProducerServer { self =>
 
   val producer = new KafkaProducer[String, Post](props)
 
-  def run(): Cancellable = {
+  def run()(implicit ec: ExecutionContext, system: ActorSystem): Cancellable = {
     logger.info("Start a producer")
-    system.scheduler.schedule(1 seconds, 5 seconds) {
-      sendRecords()
+    system.scheduler.schedule(1 seconds, 1 seconds) {
+      logger.info("Send messages")
+      sendRecords(5)
     }
   }
 
-  def sendRecords(): Unit = {
-    (1 to 5).map { v =>
+  def sendRecords(amount: Int): Unit = {
+    (1 to amount).map { v =>
       val timestamp = System.currentTimeMillis()
       val post = new Post()
       post.setId(v)

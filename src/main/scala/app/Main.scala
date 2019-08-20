@@ -1,21 +1,33 @@
 package app
 
 import akka.actor.ActorSystem
+import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.ExecutionContext
 
 object Main extends App {
+  self =>
 
-  val system = ActorSystem("kafka-consumer")
+  val logger: Logger = LoggerFactory.getLogger(self.getClass)
 
+  implicit val system: ActorSystem = ActorSystem("kafka")
   implicit val ec: ExecutionContext = system.dispatcher
 
-  val postConsumerServer = PostConsumerServer()
-
   val postProducerServer = PostProducerServer()
+  val consumerManger = ConsumerManager()
 
-  postConsumerServer.run()
-
+  // Start a producer
   postProducerServer.run()
+
+  // Start a consumer
+  consumerManger.addFactory(PostConsumerServerFactory)
+  consumerManger.runAll()
+
+  // Stop the consumer when the VM exits
+  sys.addShutdownHook {
+    logger.info("Stopping consumer...")
+    consumerManger.shutdown()
+    system.terminate()
+  }
 
 }

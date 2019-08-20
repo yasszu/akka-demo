@@ -24,7 +24,7 @@ class PostConsumerServer() extends ConsumerServer[String, Post] {
 
   override val consumer: Consumer[String, Post] = KafkaConsumer[String, Post](props)
 
-  override def onSubscribe(records: Iterator[(String, Post)]): Unit = {
+  override def subscribe(records: Iterator[(String, Post)]): Unit = {
     records.foreach { case (key: String, post: Post) =>
       println(s"key:$key, value: {id:${post.getId}, timestamp: ${post.getTimestamp}}")
     }
@@ -32,6 +32,8 @@ class PostConsumerServer() extends ConsumerServer[String, Post] {
 
 }
 
-object PostConsumerServer {
-  def apply(): PostConsumerServer = new PostConsumerServer()
+object PostConsumerServerFactory extends ConsumerServerFactory {
+
+  override def generate(): ConsumerApplication = new PostConsumerServer()
+
 }
