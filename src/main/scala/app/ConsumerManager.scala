@@ -3,9 +3,11 @@ package app
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.duration._
+import scala.language.postfixOps
 import scala.util.{Failure, Success}
 
-class ConsumerManager {
+class ConsumerManager extends Delay {
   self =>
 
   val logger: Logger = LoggerFactory.getLogger(self.getClass)
@@ -37,13 +39,17 @@ class ConsumerManager {
         logger.info("Stopped successfully")
       case Failure(_) =>
         logger.error("Non fatal error occurred")
-        logger.error("Restart consumer")
         resetServer(pid)
-        run(pid)
+        logger.error("Waiting for restating a consumer")
+        delay(15 seconds) {
+          logger.info("Restart consumer")
+          run(pid)
+        }
     }
   }
 
   private def resetServer(pid: Int): Unit = {
+    logger.info("Reset consumer server")
     servers -= pid
     val server = factories(pid).generate()
     servers += (pid -> server)
