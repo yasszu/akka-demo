@@ -3,13 +3,14 @@ package app
 import java.util.Properties
 
 import akka.actor.{ActorSystem, Cancellable}
+import com.typesafe.config.{Config, ConfigFactory}
 import example.avro.messages.Post
-import io.confluent.kafka.serializers.KafkaAvroSerializer
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
+import scala.language.postfixOps
 
 class PostProducerServer { self =>
 
@@ -17,13 +18,20 @@ class PostProducerServer { self =>
 
   val topic: String = "post"
 
+  lazy val config: Config = ConfigFactory.load().getConfig("kafka.producer")
+  lazy val bootstrapServer: String = config.getString("bootstrap.servers")
+  lazy val acks: String = config.getString("acks")
+  lazy val schemaRegistryUrl: String = config.getString("schema.registry.url")
+  lazy val keySerializer: String = config.getString("key.serializer")
+  lazy val valueSerializer: String = config.getString("value.serializer")
+
   val props: Properties = {
     val p = new Properties()
-    p.setProperty("bootstrap.servers", "localhost:9092")
-    p.setProperty("acks", "all")
-    p.setProperty("key.serializer", "org.apache.kafka.common.serialization.StringSerializer")
-    p.setProperty("schema.registry.url", "http://0.0.0.0:8081")
-    p.setProperty("value.serializer", classOf[KafkaAvroSerializer].getCanonicalName)
+    p.setProperty("bootstrap.servers", bootstrapServer)
+    p.setProperty("acks", acks)
+    p.setProperty("schema.registry.url", schemaRegistryUrl)
+    p.setProperty("key.serializer", keySerializer)
+    p.setProperty("value.serializer", valueSerializer)
     p
   }
 
